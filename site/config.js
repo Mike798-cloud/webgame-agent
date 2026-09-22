@@ -1,4 +1,4 @@
 window.NARRATIVE_AGENT_DEFAULTS = {
-  workerUrl: '',
+  workerUrl: 'https://webgame-agent.2936705959.workers.dev',
   githubOwner: 'Mike798-cloud'
 };
