@@ -1,0 +1,70 @@
+{
+  "builtAt": "2026-09-22T14:33:19.013Z",
+  "files": [
+    {
+      "path": ".github/workflows/pages.yml",
+      "bytes": 564,
+      "sha256": "028f0b354789f3ecbeaff08ebb7c5fd99901009d20134fb88126cbc47f07c4a9"
+    },
+    {
+      "path": "README.md",
+      "bytes": 3316,
+      "sha256": "c6688838f6ed1fd4e2afc394fc568124cfffe0025204b7626ebcc9cf8f2ee34e"
+    },
+    {
+      "path": "site/404.html",
+      "bytes": 152,
+      "sha256": "f664a0fbc89917e4f7100bad15681f73ba6d4962ff9ebf57c2b582156fb60bd2"
+    },
+    {
+      "path": "site/app.js",
+      "bytes": 34428,
+      "sha256": "6b46fecfb107b2f98ba93866a5a2427dd7d7e1761be03ca196a5a76af7908ad7"
+    },
+    {
+      "path": "site/config.js",
+      "bytes": 87,
+      "sha256": "dc04f40e8a8a1e8379fe777b1989322241c4ade9582ad6be403ffeec37dfef91"
+    },
+    {
+      "path": "site/core.js",
+      "bytes": 7266,
+      "sha256": "dd9a9172712b1908e9b4a33fa58afa559b1cd07e917b92f8808901f857748fdb"
+    },
+    {
+      "path": "site/data.js",
+      "bytes": 16973,
+      "sha256": "f658687ed827946b64517e553967d7803138b0e5c58e42e73e5090c0032cab00"
+    },
+    {
+      "path": "site/index.html",
+      "bytes": 2151,
+      "sha256": "c746e7e51c0cf072cdeeee168203213ce5a7c5f05e7a87e63f319c0a95f14d45"
+    },
+    {
+      "path": "site/styles.css",
+      "bytes": 12065,
+      "sha256": "f815461ca25d7864b8daacadaa17adb22c963b784f5e46352020c9978b2015fe"
+    },
+    {
+      "path": "worker/index.js",
+      "bytes": 8064,
+      "sha256": "2ee2d6f15ebcdfba3f400bfa32734dc74911a8616bf4c8fb498db751c4d8ba46"
+    },
+    {
+      "path": "worker/package.json",
+      "bytes": 184,
+      "sha256": "30dd7cffd11c85228099493ac543f39196901dedb4b0ad82e2634d734de3aafc"
+    },
+    {
+      "path": "worker/prompts.js",
+      "bytes": 10332,
+      "sha256": "e19fd54e2703f175fed7a5b70b5331fc35507eaea5e36e60aac42ad7f1bec813"
+    },
+    {
+      "path": "worker/wrangler.jsonc",
+      "bytes": 362,
+      "sha256": "78f329b2abd26599814bfcaa91708ed4b0aaa15fb6f82e9d2dc1fae9509105e3"
+    }
+  ]
+}
