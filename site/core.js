@@ -1,0 +1,130 @@
+import { GENRES } from './data.js';
+
+export const STORAGE_KEY = 'narrative_agent_state_v2';
+export const SETTINGS_KEY = 'narrative_agent_settings_v1';
+
+export function normalizeText(input='') {
+  return String(input).toLowerCase().replace(/[\s\p{P}\p{S}]+/gu,'');
+}
+export function grams(input='', n=2) {
+  const text = normalizeText(input); const out = new Set();
+  if (text.length < n) { if (text) out.add(text); return out; }
+  for (let i=0;i<=text.length-n;i++) out.add(text.slice(i,i+n));
+  return out;
+}
+export function jaccard(a,b) {
+  const A=grams(a),B=grams(b); if(!A.size&&!B.size)return 1; let inter=0;
+  for(const x of A) if(B.has(x)) inter++; const union=A.size+B.size-inter; return union?inter/union:0;
+}
+const CONCEPT_TERMS=['伪网站','网站','真实','章节','未解锁','入口','下一步','页面','论坛','后台','文案','人物','语言','口语','短句','排比','卡片','渐变','毛玻璃','简笔画','图片','构图','谜题','答案','提示','伏笔','结局','移动端','手机','回跳','信息','文书','聊天','部署','路径','联机','评分','回归','玩家','证据','引用','仓库'];
+function conceptSimilarity(a,b){const A=new Set(CONCEPT_TERMS.filter(t=>String(a).includes(t))),B=new Set(CONCEPT_TERMS.filter(t=>String(b).includes(t)));if(!A.size||!B.size)return 0;let i=0;for(const x of A)if(B.has(x))i++;return i/Math.min(A.size,B.size);}
+
+
+
+export const REPO_CATEGORY_LABELS = {
+  game: '游戏', guide: '攻略', old: '旧版/备份', test: '测试/实验', tool: '工具/服务', unknown: '待确认'
+};
+
+function repoText(repo={}){return `${repo.name||''} ${repo.description||''}`.toLowerCase();}
+export function canonicalWorkKey(value=''){
+  return String(value||'').toLowerCase().replace(/(?:[-_.\s]*(?:gonglue|攻略|guide|walkthrough))$/i,'').replace(/(?:[-_.\s]*(?:old|backup|bak|archive|legacy|deprecated|test|tests|demo|dev|beta|alpha|copy|tmp|temp|v\d+(?:\.\d+)*))$/i,'').replace(/[^a-z0-9\u3400-\u9fff]+/g,'').trim();
+}
+export function inferRepoCategory(repo={}, scan=null){
+  const name=String(repo.name||''), text=repoText(repo), desc=String(repo.description||'');
+  const signals=scan?.signals||repo.signals||{};
+  if(/(?:^|[-_.\s])(gonglue|guide|walkthrough)(?:$|[-_.\s])|攻略/i.test(name+' '+desc)) return {category:'guide',confidence:.99,reason:'仓库名/描述明确包含攻略标记'};
+  if(/(?:^|[-_.\s])(old|backup|bak|archive|legacy|deprecated|copy)(?:$|[-_.\s])|旧版|备份/i.test(name+' '+desc)) return {category:'old',confidence:.94,reason:'仓库名/描述具有旧版或备份标记'};
+  if(/(?:^|[-_.\s])(test|tests|demo|sandbox|prototype|dev|beta|alpha|tmp|temp)(?:$|[-_.\s])|测试|原型/i.test(name+' '+desc)) return {category:'test',confidence:.9,reason:'仓库名/描述具有测试或原型标记'};
+  if(/(?:^|[-_.\s])(agent|backend|server|relay|api|worker|tool|tools|template|starter|infra)(?:$|[-_.\s])|工具|服务端|中继/i.test(name+' '+desc)) return {category:'tool',confidence:.86,reason:'仓库更像工具、后端或基础设施'};
+  if((scan?.entries||[]).length && (Number(signals.htmlFiles||0)>0 || (scan.entries||[]).some(x=>/\.html?$/i.test(x)))) return {category:'game',confidence:.88,reason:'实际引用扫描发现可运行网页入口'};
+  if(/解谜|推理|游戏|game|mystery|detective|horror|恐怖|剧情|互动/.test(text)) return {category:'game',confidence:.77,reason:'仓库描述具有网页游戏/叙事项目特征'};
+  if(repo.has_pages||/\.github\.io\//i.test(String(repo.homepage||''))) return {category:'game',confidence:.72,reason:'仓库配置了 GitHub Pages 主页'};
+  return {category:'unknown',confidence:.42,reason:'仅凭仓库元数据无法可靠确认'};
+}
+export function inferRepoCatalogEntry(repo={}, scan=null, existing=null){
+  const base={
+    repo:repo.name||scan?.repository?.repo||existing?.repo||'',
+    repoUrl:repo.url||existing?.repoUrl||'',
+    description:repo.description??existing?.description??'',
+    updated_at:repo.updated_at||existing?.updated_at||'',
+    homepage:repo.homepage||existing?.homepage||'',
+    language:repo.language||existing?.language||'',
+    archived:!!repo.archived,
+    fork:!!repo.fork,
+    size:Number(repo.size||existing?.size||0),
+    has_pages:!!(repo.has_pages??existing?.has_pages),
+    signals:scan?.signals||existing?.signals||null,
+    entries:scan?.entries||existing?.entries||[],
+    scannedAt:scan?Date.now():(existing?.scannedAt||0)
+  };
+  if(existing?.manual) return {...base,...existing,repo:base.repo,repoUrl:base.repoUrl,description:base.description,updated_at:base.updated_at,homepage:base.homepage,language:base.language,archived:base.archived,fork:base.fork,size:base.size,has_pages:base.has_pages,signals:base.signals,entries:base.entries};
+  if(existing?.source==='ai' && !scan) return {...existing,...base,category:existing.category,workKey:existing.workKey,workTitle:existing.workTitle,confidence:existing.confidence,reason:existing.reason,source:'ai'};
+  const judged=inferRepoCategory(repo,scan), category=existing?.source==='ai'?existing.category:judged.category;
+  const rawKey=existing?.source==='ai'?existing.workKey:canonicalWorkKey(base.repo);
+  return {...base,category,workKey:rawKey||canonicalWorkKey(base.repo)||base.repo.toLowerCase(),workTitle:existing?.workTitle||base.repo,confidence:existing?.source==='ai'?existing.confidence:judged.confidence,reason:existing?.source==='ai'?existing.reason:judged.reason,source:existing?.source==='ai'?'ai':'heuristic',manual:false};
+}
+export function mergeRepoCatalog(repos=[], catalog=[]){
+  const old=new Map((catalog||[]).map(x=>[x.repo,x]));
+  return (repos||[]).map(repo=>inferRepoCatalogEntry(repo,null,old.get(repo.name))).sort((a,b)=>String(b.updated_at).localeCompare(String(a.updated_at)));
+}
+export function reviewExperience(text, experiences=[]) {
+  const cleaned=String(text||'').trim(); if(!cleaned)return{worth:0,decision:'忽略',reason:'没有可评审内容',duplicate:null,scope:'临时'};
+  let best=null; for(const item of experiences){const s=Math.max(jaccard(cleaned,item.title),jaccard(cleaned,item.body),conceptSimilarity(cleaned,item.title+' '+item.body));if(!best||s>best.score)best={item,score:s};}
+  let worth=2; if(cleaned.length>=24)worth++; if(/(因为|否则|导致|避免|应该|不要|必须|适合|例外|前提)/.test(cleaned))worth++; if(/(所有作品|以后|长期|通用|任何项目)/.test(cleaned))worth++; if(/(这个页面|这张图|当前文件|第三页|第\d+页|这一次)/.test(cleaned))worth--; worth=Math.max(1,Math.min(5,worth));
+  const duplicate=best&&best.score>=.46?best:null; let decision=worth>=4?'建议保存':worth===3?'建议作为项目经验':'建议仅临时使用'; if(duplicate&&duplicate.score>=.64)decision='建议合并已有经验';
+  const scope=/(所有作品|以后|长期|通用)/.test(cleaned)?'全局':/(伪网站|本格|变格|密室|聊天|档案|T\+P|图形)/i.test(cleaned)?'类型':'项目';
+  return{worth,decision,scope,duplicate,reason:duplicate?`与「${duplicate.item.title}」存在较高重合，优先补充而不是重复建规则。`:worth>=4?'内容可执行、可复用，适合进入长期经验库。':'更像当前项目的局部判断，先不要扩大成全局规则。'};
+}
+
+export function recommendGenres(concept='') {
+  const text=normalizeText(concept); const scores=GENRES.map(g=>{let score=g.id==='hybrid'?8:0;for(const cue of g.cues)if(text.includes(normalizeText(cue)))score+=16;if(g.id==='fake-web'&&/(网站|论坛|后台|网页|公告|博客|oa)/i.test(concept))score+=18;if(g.id==='honkaku'&&/(谁|凶手|密室|不在场|时间线|证词|物证)/.test(concept))score+=18;if(g.id==='henkaku'&&/(怪异|诡异|梦|记忆|幻觉|不可靠)/.test(concept))score+=18;if(g.id==='tp'&&/(场景|拖拽|物件|拼图|机关|锈湖)/.test(concept))score+=18;return{...g,score:Math.min(96,score)};}).sort((a,b)=>b.score-a.score);
+  const top=scores.filter(x=>x.score>0).slice(0,3); return top.length?top:[{...GENRES.find(g=>g.id==='hybrid'),score:36}];
+}
+export function buildGenreAdvice(genres=[]){return genres.map((g,i)=>({rank:i+1,name:g.name,score:g.score,core:g.core,style:g.style,avoid:g.avoid,modules:g.modules}));}
+
+const PLACEHOLDER_RE=/^(无|暂无|待定|待完善|todo|tbd|none|测试|test|占位|xxx|n\/a)[\s。！!，,]*$/i;
+export function meaningfulText(value='',min=80){
+  const raw=String(value||'').trim(); if(!raw||PLACEHOLDER_RE.test(raw))return false;
+  const compact=normalizeText(raw); if(compact.length<min)return false;
+  const chars=[...compact]; const unique=new Set(chars).size; if(unique<Math.min(18,Math.ceil(chars.length*.06)))return false;
+  const repetitive=/(.{1,6})\1{8,}/u.test(compact); return !repetitive;
+}
+const FIELD_RULES={concept:[40,8],bible:[420,18],architecture:[360,14],puzzles:[300,14],copyPack:[650,16],visual:[260,10],qa:[260,12],deploy:[180,8]};
+export function evidenceProfile(project={}){
+  const fields={}; let earned=0,total=0;
+  for(const [key,[min,weight]] of Object.entries(FIELD_RULES)){const raw=String(project[key]||'');const ok=meaningfulText(raw,min);const partial=!ok&&meaningfulText(raw,Math.max(24,Math.round(min*.3)));fields[key]={ok,partial,length:normalizeText(raw).length,required:min,weight};total+=weight;earned+=ok?weight:partial?Math.round(weight*.35):0;}
+  const portfolio=project.portfolioAudit?.repoCount>0; const rawReview=project.review?.score; const review=rawReview===null||rawReview===undefined||rawReview===''?NaN:Number(rawReview); const reviewAt=Number(project.review?.reviewedAt||0); const updatedAt=Number(project.updatedAt||project.createdAt||0); const freshReview=Number.isFinite(review)&&reviewAt>=updatedAt;
+  return{fields,coverage:Math.min(100,Math.round(earned/total*100)),portfolio,hasIndependentReview:freshReview,reviewScore:freshReview?review:null,reviewStale:Number.isFinite(review)&&!freshReview};
+}
+export function projectCompleteness(project={}){return evidenceProfile(project).coverage;}
+export function progressFor(project={},field){const f=evidenceProfile(project).fields[field];return f?f.ok?100:f.partial?35:0:0;}
+
+export function localQa(project={}){
+  const issues=[];const push=(severity,title,detail)=>issues.push({severity,title,detail}); const e=evidenceProfile(project);
+  if(!e.fields.concept.ok)push('P0','项目核心概念证据不足','核心构想过短、占位或缺失，无法可靠判断类型与制作策略。');
+  if(!e.fields.bible.ok)push('P1','故事圣经不足以验收','需要真实事实层、人物动机、知识边界、时间线、玩家认知层与核心谜底，而不是只填摘要。');
+  if(!e.fields.architecture.ok)push('P1','页面/信息架构不足以验收','需要页面级进入原因、可见信息、主要出口、下一步依据与回访价值。');
+  if(!e.fields.puzzles.ok)push('P1','谜题证据不足','需要前置、线索来源、推理步骤、答案、验证、分层提示与叙事回报。');
+  if(!e.fields.copyPack.ok)push('P1','完整文案不足以验收','长篇项目应使用分段文案生产并覆盖主要页面、人物、交互、演出与终局。');
+  const combined=[project.bible,project.copyPack,project.architecture].join('\n'); const clichés=['你不该来这里','有些事情最好不要知道','真相从未消失','有些秘密','你看到的未必是真的'];for(const x of clichés)if(combined.includes(x))push('P2','发现高频 AI 恐怖套话',`检测到“${x}”，建议按人物身份和具体情境重写。`);
+  if((project.genres||[]).some(g=>g.id==='fake-web')&&/第[一二三四五六七八九十\d]+章|未解锁|完成上一关/.test(combined))push('P1','伪网站出现明显章节化语汇','会削弱真实网站感，优先改成世界内自然入口。');
+  if(!(project.genres||[]).length)push('P2','尚未确定类型 DNA','页面、美术、文案和谜题容易各自走向不同风格。');
+  if(project.siteAudit?.broken?.length)push('P0','部署巡检发现断链',`实际请求发现 ${project.siteAudit.broken.length} 个 4xx/5xx 或网络失败项，发布前必须修复。`);
+  if(project.siteAudit?.outsideBase?.length)push('P1','GitHub Pages 仓库子路径风险',`发现 ${project.siteAudit.outsideBase.length} 个引用逃离仓库子路径，线上可能指向错误根目录。`);
+  if(project.siteAudit?.interaction?.absoluteRootRefs)push('P1','静态扫描发现根路径引用特征',`部署代码中检测到 ${project.siteAudit.interaction.absoluteRootRefs} 处以 / 开头的资源或跳转特征，GitHub Pages 子路径部署需要人工确认。`);
+  if(project.siteAudit?.warnings?.length)push('P2','部署交互静态检查需要人工确认',project.siteAudit.warnings.slice(0,3).join('；'));
+  if(project.githubWorkKey&&!project.githubReview)push('P1','GitHub 导入作品尚未做主仓深度复盘','该项目来自作品库，但还没有读取主仓实际引用文件；剧情、流程和评分结论应在深度复盘后再给。');
+  if(project.githubReview?.snapshot?.truncated)push('P2','主仓引用扫描存在截断','仓库体量或引用深度超过当前扫描上限，评审结论需降低置信度。');
+  if(!project.portfolioAudit?.repoCount)push('P2','尚未执行账号作品复盘','如果要让 Agent 继承创作者方法论，应至少完成一次 GitHub 作品集扫描并保存总结。');
+  if(!e.hasIndependentReview)push('P1',e.reviewStale?'独立质量评分已过期':'尚无独立质量评分',e.reviewStale?'项目内容在上次评审后发生变化，需要重新验收。':'本地仅能判断材料与硬性缺口；10 分制必须由独立评审基于最终证据生成。');
+  return issues;
+}
+
+export function strictScore(project={}){
+  const e=evidenceProfile(project); if(!e.hasIndependentReview)return null; return Math.max(0,Math.min(10,Number(e.reviewScore.toFixed(2))));
+}
+export function scoreLabel(project={}){const s=strictScore(project);return s===null?'未评分':`${s.toFixed(2)}`;}
+
+export function escapeHtml(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+export function formatDate(ts){try{return new Intl.DateTimeFormat('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(ts));}catch{return'';}}
+export function uid(prefix='id'){return`${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`;}
