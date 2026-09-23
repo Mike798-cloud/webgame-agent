@@ -1,3 +1,4 @@
+// redeploy worker
 import { buildPrompt } from './prompts.js';
 
 const DEFAULT_TEXT_MODEL='@cf/zai-org/glm-4.7-flash';
