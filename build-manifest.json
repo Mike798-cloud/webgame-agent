@@ -1,5 +1,5 @@
 {
-  "builtAt": "2026-09-22T14:33:19.013Z",
+  "builtAt": "2026-09-25T07:04:32.432000Z",
   "files": [
     {
       "path": ".github/workflows/pages.yml",
@@ -8,8 +8,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 3316,
-      "sha256": "c6688838f6ed1fd4e2afc394fc568124cfffe0025204b7626ebcc9cf8f2ee34e"
+      "bytes": 6927,
+      "sha256": "fc903c332f7adaa55a7487dc0b4b5278b2f01bbd21f771392e17d7c57d948960"
     },
     {
       "path": "site/404.html",
@@ -18,38 +18,43 @@
     },
     {
       "path": "site/app.js",
-      "bytes": 34428,
-      "sha256": "6b46fecfb107b2f98ba93866a5a2427dd7d7e1761be03ca196a5a76af7908ad7"
+      "bytes": 149954,
+      "sha256": "c0d5f857605e8fd5de07887fd6996444f23b9283a8fe6cc095a82d549e61c859"
     },
     {
       "path": "site/config.js",
-      "bytes": 87,
-      "sha256": "dc04f40e8a8a1e8379fe777b1989322241c4ade9582ad6be403ffeec37dfef91"
+      "bytes": 131,
+      "sha256": "095b4facdefdcfd5572aeb5c87fefa638f1d06e2f4c9fcc910255a16a044e346"
     },
     {
       "path": "site/core.js",
-      "bytes": 7266,
-      "sha256": "dd9a9172712b1908e9b4a33fa58afa559b1cd07e917b92f8808901f857748fdb"
+      "bytes": 14385,
+      "sha256": "12c8c407064b9ba0093fb93885aa0edc21e8e84a8aeabfe2de592c72cc65685e"
     },
     {
       "path": "site/data.js",
-      "bytes": 16973,
-      "sha256": "f658687ed827946b64517e553967d7803138b0e5c58e42e73e5090c0032cab00"
+      "bytes": 20910,
+      "sha256": "428d237c603e9022ba759a14583e9393b9eadbfa786f5c08a0743515a0fe448e"
+    },
+    {
+      "path": "site/experience.js",
+      "bytes": 14599,
+      "sha256": "08117b1ade5a30953e8a1424931c685c585948e40d47be3ae8f713d73cc388cd"
     },
     {
       "path": "site/index.html",
-      "bytes": 2151,
-      "sha256": "c746e7e51c0cf072cdeeee168203213ce5a7c5f05e7a87e63f319c0a95f14d45"
+      "bytes": 2247,
+      "sha256": "c2b58b507f81f349fd291d60094e8766b359567f6b6ccbf33dd79b9eea7f8ae6"
     },
     {
       "path": "site/styles.css",
-      "bytes": 12065,
-      "sha256": "f815461ca25d7864b8daacadaa17adb22c963b784f5e46352020c9978b2015fe"
+      "bytes": 33646,
+      "sha256": "77352531d732d40bd387c413110e955b66e76da0289a2e8d54a0f6633f246273"
     },
     {
       "path": "worker/index.js",
-      "bytes": 8064,
-      "sha256": "2ee2d6f15ebcdfba3f400bfa32734dc74911a8616bf4c8fb498db751c4d8ba46"
+      "bytes": 50910,
+      "sha256": "a830ce4dc9231bfae43bb7f70d538a555a6bddda52578ecab6faf7e433f8c6c5"
     },
     {
       "path": "worker/package.json",
@@ -58,8 +63,8 @@
     },
     {
       "path": "worker/prompts.js",
-      "bytes": 10332,
-      "sha256": "e19fd54e2703f175fed7a5b70b5331fc35507eaea5e36e60aac42ad7f1bec813"
+      "bytes": 25697,
+      "sha256": "f67f38a806da8384b6d3fcb3272cf878a04be169e3c3bf5fa5e6b9e89e5d5546"
     },
     {
       "path": "worker/wrangler.jsonc",
